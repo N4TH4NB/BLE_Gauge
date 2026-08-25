@@ -1,0 +1,184 @@
+(version 1)
+
+# =====================================================================
+# JLCPCB - Custom Design Rules para KiCad (8/9/10)
+# Baseado na tabela "PCB Specifications" da JLCPCB (jlcpcb.com/capabilities)
+#
+# COMO USAR:
+#   1) Copie este arquivo para a pasta do seu projeto e renomeie para
+#      <nome_do_seu_projeto>.kicad_dru (o KiCad carrega automaticamente
+#      um arquivo com esse nome exato).
+#   2) Ainda assim configure manualmente em
+#      File > Board Setup > Design Rules > Constraints:
+#        - Minimum track width         = 0.15mm (ou 0.09mm p/ multicamada)
+#        - Minimum clearance           = 0.15mm
+#        - Minimum via annular width   = 0.15mm
+#        - Minimum via diameter        = 0.45mm
+#        - Minimum via hole            = 0.25mm
+#        - Minimum hole to hole        = 0.25mm
+#        - Minimum silk clearance      = 0.15mm
+#        - Minimum silk text height    = 1.0mm
+#        - Minimum silk text thickness = 0.15mm
+#        - Minimum copper edge clearance = 0.2mm
+#      As Custom Rules (este arquivo) NÃO substituem o painel de
+#      Constraints - elas complementam com regras condicionais
+#      (ex.: valores diferentes só para BGA, só para 2oz, etc).
+#   3) Ajuste as referências (ex. "U1") nas regras de BGA abaixo para
+#      combinar com os designadores dos seus componentes BGA.
+#   4) Rode Inspect > Design Rules Checker (F8/F11) para validar.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# 1) TRILHAS / CLEARANCE GERAL (cobre 1oz - padrão JLC)
+# ---------------------------------------------------------------------
+
+(rule "Min track width - outer layer (1oz)"
+    (condition "A.Type == 'Track' && (A.Layer == 'F.Cu' || A.Layer == 'B.Cu')")
+    (constraint track_width (min 0.127mm) (opt 0.2mm)))
+
+(rule "Min track width - inner layer (1oz, multilayer)"
+    (condition "A.Type == 'Track' && A.Layer != 'F.Cu' && A.Layer != 'B.Cu'")
+    (constraint track_width (min 0.09mm) (opt 0.15mm)))
+
+(rule "Min clearance - general (1oz)"
+    (constraint clearance (min 0.127mm) (opt 0.2mm)))
+
+(rule "Min copper to board edge"
+    (constraint edge_clearance (min 0.2mm)))
+
+
+# ---------------------------------------------------------------------
+# 2) VIAS / FUROS
+# ---------------------------------------------------------------------
+
+(rule "Min via diameter (multilayer)"
+    (condition "A.Type == 'Via'")
+    (constraint annular_width (min 0.05mm) (opt 0.0625mm)))
+
+(rule "Min via hole size (multilayer)"
+    (condition "A.Type == 'Via'")
+    (constraint hole_size (min 0.15mm) (opt 0.2mm)))
+
+(rule "Min via-to-via hole spacing"
+    (condition "A.Type == 'Via' && B.Type == 'Via'")
+    (constraint hole_to_hole (min 0.2mm)))
+
+(rule "Min pad-to-pad hole spacing (PTH)"
+    (condition "A.Type == 'Pad' && B.Type == 'Pad'")
+    (constraint hole_to_hole (min 0.45mm)))
+
+(rule "Min PTH annular ring"
+    (condition "A.Type == 'Pad' && A.Pad_Type == 'Through-hole'")
+    (constraint annular_width (min 0.15mm) (opt 0.2mm)))
+
+(rule "Min NPTH pad annular ring"
+    (condition "A.Type == 'Pad' && A.Pad_Type == 'NPTH, mechanical'")
+    (constraint annular_width (min 0.45mm)))
+
+
+# ---------------------------------------------------------------------
+# 3) REGRAS ESPECÍFICAS PARA BGA
+# ---------------------------------------------------------------------
+# JLCPCB:
+#  - BGA pad-to-trace clearance >= 0.1mm (min. absoluto 0.09mm multicamada)
+#  - Pads BGA de 0.2-0.25mm de diâmetro exigem acabamento ENIG
+#  - Vias podem ser colocadas dentro dos pads BGA (via-in-pad, tampada)
+#  - Trilha/espaçamento em fanout de BGA pode chegar a 3mil (0.075mm)
+#
+# Para o KiCad reconhecer um pad como "BGA pad", a propriedade de
+# fabricação do pad deve estar marcada como "BGA pad" nas propriedades
+# do footprint/pad (Fabrication Property = BGA pad).
+
+(rule "BGA pad clearance to track/pad"
+    (condition "A.Fabrication_Property == 'BGA pad'")
+    (constraint clearance (min 0.1mm) (opt 0.127mm)))
+
+(rule "BGA pad minimum size (0.2-0.25mm pitch class)"
+    (condition "A.Fabrication_Property == 'BGA pad'")
+    (constraint hole_size (min 0.2mm)))
+
+# Neckdown (afinamento de trilha/clearance) somente DENTRO da área do
+# courtyard de um componente BGA específico - ajuste a referência "U1"
+# para cada BGA do seu projeto (duplique o bloco se houver mais de um).
+(rule "BGA neckdown - U1"
+    (condition "A.insideCourtyard('U1')")
+    (constraint track_width (min 0.075mm) (opt 0.09mm))
+    (constraint clearance (min 0.075mm) (opt 0.09mm)))
+
+# Caso 'insideCourtyard' não funcione corretamente na sua versão do
+# KiCad, desenhe uma área/keepout ao redor do BGA nomeada "BGA_U1" e
+# use a regra alternativa abaixo (descomente e comente a de cima):
+# (rule "BGA neckdown - U1 (fallback insideArea)"
+#     (condition "A.insideArea('BGA_U1')")
+#     (constraint track_width (min 0.075mm) (opt 0.09mm))
+#     (constraint clearance (min 0.075mm) (opt 0.09mm)))
+
+(rule "Via-in-pad allowed diameter range (BGA)"
+    (condition "A.Type == 'Via' && A.isPlated() && A.Fabrication_Property == 'BGA pad'")
+    (constraint hole_size (min 0.15mm) (max 0.55mm)))
+
+
+# ---------------------------------------------------------------------
+# 4) SOLDER MASK
+# ---------------------------------------------------------------------
+
+(rule "Solder mask minimum bridge (1oz, cores padrão)"
+    (constraint silk_clearance (min 0.09mm)))
+
+(rule "Solder mask expansion"
+    (constraint physical_clearance (min 0mm))
+    (condition "A.Type == 'Pad'"))
+
+(rule "Filled via - max diameter for tented/plugged via"
+    (condition "A.Type == 'Via'")
+    (constraint hole_size (max 0.5mm)))
+
+
+# ---------------------------------------------------------------------
+# 5) SILKSCREEN
+# ---------------------------------------------------------------------
+
+(rule "Min silkscreen line width"
+    (condition "A.Type == 'Text' || A.Type == 'Graphic'")
+    (layer "F.Silkscreen")
+    (constraint track_width (min 0.15mm)))
+
+(rule "Min silkscreen line width (back)"
+    (condition "A.Type == 'Text' || A.Type == 'Graphic'")
+    (layer "B.Silkscreen")
+    (constraint track_width (min 0.15mm)))
+
+(rule "Min pad to silkscreen clearance"
+    (constraint silk_clearance (min 0.15mm))
+    (condition "A.Type == 'Pad'"))
+
+
+# ---------------------------------------------------------------------
+# 6) SMD / PADS
+# ---------------------------------------------------------------------
+
+(rule "Min SMD pad to pad clearance (different nets)"
+    (condition "A.Type == 'Pad' && A.Pad_Type == 'SMD' && B.Type == 'Pad' && B.Pad_Type == 'SMD' && A.Net != B.Net")
+    (constraint clearance (min 0.15mm)))
+
+(rule "Min via to track clearance"
+    (condition "A.Type == 'Via' && B.Type == 'Track'")
+    (constraint clearance (min 0.2mm)))
+
+(rule "Min PTH to track clearance"
+    (condition "A.Type == 'Pad' && A.Pad_Type == 'Through-hole' && B.Type == 'Track'")
+    (constraint clearance (min 0.28mm) (opt 0.35mm)))
+
+
+# ---------------------------------------------------------------------
+# 7) BOARD OUTLINE / SLOTS
+# ---------------------------------------------------------------------
+
+(rule "Min plated slot width"
+    (condition "A.Type == 'Pad' && A.isPlated() && A.Shape == 'Oval'")
+    (constraint hole_size (min 0.5mm)))
+
+(rule "Min non-plated slot width"
+    (condition "A.Type == 'Pad' && A.Shape == 'Oval'")
+    (constraint hole_size (min 1.0mm)))
