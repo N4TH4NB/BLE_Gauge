@@ -42,7 +42,7 @@
     (constraint track_width (min 0.09mm) (opt 0.15mm)))
 
 (rule "Min clearance - general (1oz)"
-    (constraint clearance (min 0.127mm) (opt 0.2mm)))
+    (constraint clearance (min 0.1mm) (opt 0.2mm)))
 
 (rule "Min copper to board edge"
     (constraint edge_clearance (min 0.2mm)))
@@ -54,7 +54,7 @@
 
 (rule "Min via diameter (multilayer)"
     (condition "A.Type == 'Via'")
-    (constraint annular_width (min 0.05mm) (opt 0.0625mm)))
+    (constraint annular_width (min 0.075mm) (opt 0.125mm)))
 
 (rule "Min via hole size (multilayer)"
     (condition "A.Type == 'Via'")
@@ -164,7 +164,7 @@
 
 (rule "Min via to track clearance"
     (condition "A.Type == 'Via' && B.Type == 'Track'")
-    (constraint clearance (min 0.2mm)))
+    (constraint clearance (min 0.125mm)))
 
 (rule "Min PTH to track clearance"
     (condition "A.Type == 'Pad' && A.Pad_Type == 'Through-hole' && B.Type == 'Track'")
@@ -180,5 +180,5 @@
     (constraint hole_size (min 0.5mm)))
 
 (rule "Min non-plated slot width"
-    (condition "A.Type == 'Pad' && A.Shape == 'Oval'")
+    (condition "A.Type == 'Pad' && A.isPlated() && A.Shape == 'Oval'")
     (constraint hole_size (min 1.0mm)))
