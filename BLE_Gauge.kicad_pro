@@ -76,7 +76,12 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        [
+          "annular_width|142100000|85625000|4783995a-c420-4f29-9760-21f3253b379c|00000000-0000-0000-0000-000000000000",
+          ""
+        ]
+      ],
       "meta": {
         "version": 2
       },
@@ -522,7 +527,7 @@
     "classes": [
       {
         "bus_width": 12,
-        "clearance": 0.15,
+        "clearance": 0.2,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
@@ -995,7 +1000,7 @@
         "uuid": "46ec7b9e-7ce4-471b-b2a3-117ade628de1"
       }
     ],
-    "used_designators": "Q1,U2,J1-3,D1,C14-16,AE1,R2-4,#PWR7-25,#PWR34-35,Y1-2",
+    "used_designators": "#FLG1,Q1,U2,J1-3,D1,C14-16,AE1,R2-4,#PWR7-25,#PWR34-36,Y1-2",
     "variants": []
   },
   "sheets": [
